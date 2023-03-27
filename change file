@@ -1,0 +1,62 @@
+import React, { useState } from 'react';
+import { httpPatch } from 'lib/http';
+
+function Dropdown({ label, onSelect, defaultSelected, disabled, children }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selected, setSelected] = useState(defaultSelected);
+
+  function toggle() {
+    setIsOpen(!isOpen);
+  }
+
+  function handleSelect(item) {
+    setSelected(item);
+    onSelect && onSelect(item);
+    httpPatch('user', { [`dropdown-state-${item}`]: true });
+  }
+
+  return (
+    <div className={`dropdown ${disabled ? 'dropdown-disabled' : ''}`}>
+      <button type="button" className="dropdown-button" id="dropdownButton" aria-haspopup="true" aria-expanded={isOpen} onClick={toggle}>{label}</button>
+
+      <ul className={`${isOpen ? 'dropdown-open' : ''} dropdown-menu`} aria-labelledby="dropdownButton" role="menu">
+        {React.Children.map(children, child => {
+          return React.cloneElement(child, {
+            selected: selected === child.props.value,
+            onSelect: handleSelect,
+            disabled: disabled || child.props.disabled
+          });
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function DropdownItem({ value, onSelect, selected, disabled, children }) {
+  function handleClick() {
+    !disabled && onSelect && onSelect(value);
+  }
+
+  return (
+    <li className={`dropdown-item ${selected ? 'dropdown-item-selected' : ''} ${disabled ? 'dropdown-item-disabled' : ''}`} role="menuitem" aria-selected={selected} onClick={handleClick}>
+      {children}
+    </li>
+  );
+}
+
+function ExampleNav() {
+  return (
+    <nav>
+      <a href="/page1">Page 1</a>
+      <Dropdown label="More items" onSelect={console.log} defaultSelected="/page2">
+        <DropdownItem value="/page2">Page 2</DropdownItem>
+        <DropdownItem value="/page3" disabled>Page 3 (disabled)</DropdownItem>
+        <DropdownItem value="/page4">Page 4</DropdownItem>
+      </Dropdown>
+      <Dropdown label="Even more items" disabled>
+        <DropdownItem value="/page5">Page 5</DropdownItem>
+        <DropdownItem value="/page9">Page 9</DropdownItem>
+      </Dropdown>
+    </nav>
+  );
+}
